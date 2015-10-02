@@ -28,8 +28,8 @@ $gemspec = Gem::Specification.new do |s|
 
   s.add_dependency("activerecord", ">= 2.3.12", "< 4.0")
   s.add_dependency("activesupport", ">= 2.3.12", "< 4.0")
-  s.add_dependency("sinatra", "~> 1.0")
-  s.add_dependency("sinatra-r18n", '~> 1.1.0')
+  s.add_dependency("sinatra", "~> 1.4.6")
+  s.add_dependency("sinatra-r18n", '~> 2.0.4')
   s.add_dependency("crypt-isaac", "~> 0.9.1")
 
   s.add_development_dependency("rack-test")
