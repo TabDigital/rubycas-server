@@ -195,6 +195,7 @@ describe 'CASServer' do
         its(:content_type) { should match 'text/xml' }
         its(:body) { should match /cas:authenticationFailure.*INVALID_REQUEST/i }
       end
+
     end
 
     describe 'proxyValidate' do
@@ -217,4 +218,74 @@ describe 'CASServer' do
       end
     end
   end
+
+
+  describe 'service whitelist' do
+    let(:allowed_ip) { '127.0.0.1' }
+    let(:service) { @target_service }
+    let(:allowed_service) { @target_service }
+    let(:unallowed_service) { 'http://not-allowed.com/login' }
+
+    before do
+      load_server('default_config')
+      reset_spec_database
+      @ticket = get_ticket_for(service)
+      Rack::Request.any_instance.stub(:ip).and_return(allowed_ip)
+    end
+
+    subject { last_response }
+
+    context 'login' do
+      it 'should give error for unallowed request' do
+        visit "/login?service="+CGI.escape(unallowed_service)
+        page.should have_content("The application you attempted to authenticate to is not authorized to use CAS.")
+
+        fill_in 'username', :with => VALID_USERNAME
+        fill_in 'password', :with => VALID_PASSWORD
+
+        click_button 'login-submit'
+        page.should have_content("The application you attempted to authenticate to is not authorized to use CAS.")
+      end
+    end
+
+
+    context 'serviceValidate' do
+      let(:path) { 'serviceValidate' }
+      let(:ticket) {@ticket}
+
+      before do
+        get "/#{path}?service=#{CGI.escape(unallowed_service)}&ticket=#{CGI.escape(ticket)}"
+      end
+
+      its(:status) { should eql 422 }
+      its(:content_type) { should match 'text/xml' }
+      its(:body) { should match /cas:authenticationFailure.*INVALID_REQUEST/i }
+    end
+
+    context 'validate' do
+      let(:path) { 'validate' }
+      let(:ticket) {@ticket}
+
+      before do
+        get "/#{path}?service=#{CGI.escape(unallowed_service)}&ticket=#{CGI.escape(ticket)}"
+      end
+
+      its(:status) { should eql 422 }
+      its(:body) { should match /no/i }
+    end
+
+    context 'proxyValidate' do
+      let(:path) { 'proxyValidate' }
+      let(:ticket) {@ticket}
+
+      before do
+        get "/#{path}?service=#{CGI.escape(unallowed_service)}&ticket=#{CGI.escape(ticket)}"
+      end
+
+      its(:status) { should eql 422 }
+      its(:content_type) { should match 'text/xml' }
+      its(:body) { should match /cas:authenticationFailure.*INVALID_REQUEST/i }
+    end
+  end
+
 end
