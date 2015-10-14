@@ -297,7 +297,7 @@ module CASServer
       if !service_allowed?(@service)
         $LOG.warn("The application you attempted to authenticate to is not authorized to use CAS. #{@service}")
         @message = {:type => 'mistake', :message => "The application you attempted to authenticate to is not authorized to use CAS."}
-        status 401
+        status 422
         return render @template_engine, :login
       end
 

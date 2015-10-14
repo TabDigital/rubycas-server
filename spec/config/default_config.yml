@@ -8,13 +8,13 @@ port: 6543
 #   adapter: mysql
 #   database: casserver
 #   username: root
-#   password: 
+#   password:
 #   host: localhost
 #   reconnect: true
 database:
  adapter: sqlite3
  database: spec/casserver_spec.db
- 
+
 disable_auto_migrations: true
 
 quiet: true
@@ -51,3 +51,6 @@ enable_single_sign_out: true
 
 allowed_service_ips:
   - 127.0.0.0/24
+
+allowed_service_hosts:
+  - http://my.app.test
