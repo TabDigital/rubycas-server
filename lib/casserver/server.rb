@@ -294,6 +294,13 @@ module CASServer
       @renew = params['renew']
       @gateway = params['gateway'] == 'true' || params['gateway'] == '1'
 
+      if !service_allowed?(@service)
+        $LOG.warn("The application you attempted to authenticate to is not authorized to use CAS. #{@service}")
+        @message = {:type => 'mistake', :message => "The application you attempted to authenticate to is not authorized to use CAS."}
+        status 401
+        return render @template_engine, :login
+      end
+
       if tgc = request.cookies['tgt']
         tgt, tgt_error = validate_ticket_granting_ticket(tgc)
       end
@@ -383,6 +390,13 @@ module CASServer
 
       # 2.2.1 (optional)
       @service = clean_service_url(params['service'])
+
+      if !service_allowed?(@service)
+        $LOG.warn("The application you attempted to authenticate to is not authorized to use CAS.")
+        @message = {:type => 'mistake', :message => "The application you attempted to authenticate to is not authorized to use CAS."}
+        status 401
+        return render @template_engine, :login
+      end
 
       # 2.2.2 (required)
       @username = params['username']
@@ -590,9 +604,10 @@ module CASServer
     get "#{uri_path}/validate" do
       CASServer::Utils::log_controller_action(self.class, params)
 
-      if ip_allowed?(request.ip)
+      @service = clean_service_url(params['service'])
+
+      if ip_allowed?(request.ip) and service_allowed?(@service)
         # required
-        @service = clean_service_url(params['service'])
         @ticket = params['ticket']
         # optional
         @renew = params['renew']
@@ -603,7 +618,7 @@ module CASServer
         @username = st.username if @success
       else
         @success = false
-        @error = Error.new(:INVALID_REQUEST, 'The IP address of this service has not been allowed')
+        @error = Error.new(:INVALID_REQUEST, 'The application/IP address you attempted to authenticate to is not authorized to use CAS.')
       end
 
       status response_status_from_error(@error) if @error
@@ -621,9 +636,10 @@ module CASServer
       # force xml content type
       content_type 'text/xml', :charset => 'utf-8'
 
-      if ip_allowed?(request.ip)
+      @service = clean_service_url(params['service'])
+
+      if ip_allowed?(request.ip) and service_allowed?(@service)
         # required
-        @service = clean_service_url(params['service'])
         @ticket = params['ticket']
         # optional
         @pgt_url = params['pgtUrl']
@@ -642,7 +658,7 @@ module CASServer
         end
       else
         @success = false
-        @error = Error.new(:INVALID_REQUEST, 'The IP address of this service has not been allowed')
+        @error = Error.new(:INVALID_REQUEST, 'The application/IP address you attempted to authenticate to is not authorized to use CAS.')
       end
 
       status response_status_from_error(@error) if @error
@@ -660,10 +676,11 @@ module CASServer
       # force xml content type
       content_type 'text/xml', :charset => 'utf-8'
 
-      if ip_allowed?(request.ip)
+      @service = clean_service_url(params['service'])
+
+      if ip_allowed?(request.ip) and service_allowed?(@service)
 
         # required
-        @service = clean_service_url(params['service'])
         @ticket = params['ticket']
         # optional
         @pgt_url = params['pgtUrl']
@@ -691,7 +708,7 @@ module CASServer
         end
       else
         @success = false
-        @error = Error.new(:INVALID_REQUEST, 'The IP address of this service has not been allowed')
+        @error = Error.new(:INVALID_REQUEST, 'The application/IP address you attempted to authenticate to is not authorized to use CAS.')
       end
 
       status response_status_from_error(@error) if @error
@@ -760,6 +777,11 @@ module CASServer
       allowed_ips = Array(settings.config[:allowed_service_ips])
 
       allowed_ips.empty? || allowed_ips.any? { |i| IPAddr.new(i) === ip }
+    end
+
+    def service_allowed?(serviceHost)
+      allowed_hosts = Array(settings.config[:allowed_service_hosts])
+      serviceHost.blank? || allowed_hosts.empty? || allowed_hosts.any? { |h| serviceHost === h  }
     end
 
     helpers do
