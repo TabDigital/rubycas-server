@@ -545,3 +545,9 @@ log:
 # Allow whitelisted services only to be able to access CAS and generate tickets
 # allowed_service_hosts:
 #   - http://my.app.test
+
+# Set cookie domain and path
+# cookie:
+#   domain: localhost
+#   path: '/'
+#   secure: true

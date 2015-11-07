@@ -54,3 +54,6 @@ allowed_service_ips:
 
 allowed_service_hosts:
   - http://my.app.test
+
+cookie:
+  path: '/'
