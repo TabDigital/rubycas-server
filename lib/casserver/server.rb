@@ -526,7 +526,10 @@ module CASServer
 
       tgt = CASServer::Model::TicketGrantingTicket.find_by_ticket(request.cookies['tgt'])
 
-      response.delete_cookie 'tgt'
+      cookie_attrs = settings.config[:cookie] || {}
+      response.delete_cookie 'tgt' , { :domain => cookie_attrs[:domain],
+                                       :path => cookie_attrs[:path],
+                                       :secure => cookie_attrs[:secure] }
 
       if tgt
         CASServer::Model::TicketGrantingTicket.transaction do
